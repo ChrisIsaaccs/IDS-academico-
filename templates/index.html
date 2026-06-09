@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IDS Institucional — Panel de Control</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #000000;
+           color: #e2e8f0; min-height: 100vh; }
+
+    header { background: #2d2d2d; padding: 16px 28px;
+             border-bottom: 2px solid #696969; display: flex;
+             align-items: center; gap: 14px; }
+    header h1 { font-size: 20px; color: #93c5fd; font-weight: 600; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%;
+                  background: #22c55e; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .container { max-width: 1300px; margin: 0 auto; padding: 20px 24px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    @media(max-width:900px){ .grid-2{ grid-template-columns:1fr; } }
+
+    .card { background: #4f4f4f; border-radius: 10px; overflow: hidden;
+            border: 1px solid #000000; }
+    .card-header { padding: 14px 18px; display: flex; align-items: center;
+                   justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .card-header h2 { font-size: 15px; font-weight: 600; }
+    .card-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .card-body { padding: 16px 18px; }
+
+    .accent-blue   { border-top: 3px solid #373737; }
+    .accent-red    { border-top: 3px solid #373737; }
+    .accent-amber  { border-top: 3px solid #373737; }
+    .accent-green  { border-top: 3px solid #373737; }
+    .accent-purple { border-top: 3px solid #373737; }
+    .accent-cyan   { border-top: 3px solid #373737; }
+
+    input[type=text], input[type=email], input[type=password], input[type=number], select {
+      background: #0f172a; color: #e2e8f0; border: 1px solid #475569;
+      border-radius: 6px; padding: 8px 12px; font-size: 13px; width: 100%; }
+    input:focus, select:focus { outline: none; border-color: #2563eb; }
+
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px;
+           font-weight: 600; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+    .btn:hover { opacity: .85; }
+    .btn:active { opacity: .7; }
+    .btn-blue   { background: #2563eb; color: #fff; }
+    .btn-red    { background: #dc2626; color: #fff; }
+    .btn-green  { background: #16a34a; color: #fff; }
+    .btn-gray   { background: #475569; color: #fff; }
+    .btn-amber  { background: #d97706; color: #fff; }
+    .btn-sm     { padding: 4px 10px; font-size: 12px; }
+
+    .form-row { display: flex; gap: 8px; align-items: flex-end;
+                flex-wrap: wrap; margin-bottom: 10px; }
+    .form-group { flex: 1; min-width: 140px; }
+    .form-group label { display: block; font-size: 12px; color: #94a3b8;
+                        margin-bottom: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #0f172a; color: #94a3b8; font-weight: 600;
+         padding: 8px 10px; text-align: left; font-size: 12px; }
+    td { padding: 7px 10px; border-bottom: 1px solid #1e3a5f; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1e3a5f33; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px;
+             font-size: 11px; font-weight: 700; }
+    .badge-red    { background: #7f1d1d; color: #fca5a5; }
+    .badge-amber  { background: #78350f; color: #fcd34d; }
+    .badge-green  { background: #14532d; color: #86efac; }
+    .badge-blue   { background: #1e3a8a; color: #93c5fd; }
+    .badge-purple { background: #4c1d95; color: #c4b5fd; }
+
+    /* Log box para alertas — sin auto-scroll agresivo */
+    .logbox-wrap { position: relative; }
+    pre.logbox { background: #020617; color: #38bdf8; padding: 12px 14px;
+                 border-radius: 6px; font-family: 'Consolas', monospace;
+                 font-size: 12px; max-height: 320px; overflow-y: auto;
+                 white-space: pre-wrap; word-break: break-all; }
+    pre.logbox .entry-alert  { color: #f87171; }
+    pre.logbox .entry-dns    { color: #34d399; }
+    pre.logbox .entry-config { color: #fbbf24; }
+
+    /* Contador de próximo refresco */
+    .refresh-info { font-size: 11px; color: #64748b; }
+    .refresh-info span { color: #fbbf24; font-weight: 600; }
+
+    .step-panel { background: #36383c; border-radius: 8px; padding: 14px;
+                  margin-bottom: 10px; border: 1px solid #3e3f40; }
+    .step-label { font-size: 11px; color: #64748b; margin-bottom: 6px;
+                  font-weight: 600; }
+    .step-active { border-color: #444444; }
+
+    .info-text { font-size: 12px; color: #64748b; margin-top: 6px; }
+    .notice { padding: 10px 14px; border-radius: 6px; font-size: 13px;
+              margin-top: 8px; }
+    .notice-ok  { background: #14532d44; border: 1px solid #16a34a; color: #86efac; }
+    .notice-err { background: #7f1d1d44; border: 1px solid #dc2626; color: #fca5a5; }
+    .hidden { display: none; }
+    .email-preview { font-size: 13px; color: #fbbf24; font-weight: 600;
+                     background: #78350f33; padding: 6px 12px; border-radius: 6px;
+                     display: inline-block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="status-dot"></div>
+  <h1>🛡 IDS Institucional — Panel de Control</h1>
+  <span style="margin-left:auto;font-size:12px;color:#64748b" id="clock"></span>
+</header>
+
+<div class="container">
+
+  <!-- ═══ FILA 1: Lista blanca + Alertas ═══ -->
+  <div class="grid-2" style="margin-bottom:20px">
+
+    <!-- Lista blanca -->
+    <div class="card accent-green">
+      <div class="card-header">
+        <h2>Capa 2/3 — Lista Blanca de Dispositivos</h2>
+        <button class="btn btn-gray btn-sm" onclick="loadWhitelist()">↺ Refrescar</button>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dirección IP</label>
+            <input type="text" id="ip_input" placeholder="192.168.1.50">
+          </div>
+          <div class="form-group">
+            <label>Dirección MAC</label>
+            <input type="text" id="mac_input" placeholder="aa:bb:cc:dd:ee:ff">
+          </div>
+          <button class="btn btn-green" onclick="agregarDispositivo()">Autorizar</button>
+        </div>
+        <table>
+          <thead><tr><th>IP</th><th>MAC</th><th>Acción</th></tr></thead>
+          <tbody id="wl-tbody">
+            <tr><td colspan="3" style="color:#64748b">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Alertas — refresco controlado -->
+    <div class="card accent-red">
+      <div class="card-header">
+        <h2>Alertas de Seguridad</h2>
+        <div class="card-header-right">
+          <span class="refresh-info">Refresco en <span id="alert-countdown">300</span>s</span>
+          <button class="btn btn-red btn-sm" onclick="loadReport(true)">↺ Actualizar ahora</button>
+          <button class="btn btn-gray btn-sm" onclick="limpiarAlertas()">🗑 Limpiar vista</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="logbox-wrap">
+          <pre class="logbox" id="report_display">Esperando eventos...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FILA 2: DNS + Lista negra ═══ -->
+  <div class="grid-2" style="margin-bottom:20px">
+
+    <!-- Bitácora DNS -->
+    <div class="card accent-blue">
+      <div class="card-header">
+        <h2>Monitoreo de Sitios Web (DNS/HTTP)</h2>
+        <div class="card-header-right">
+          <span class="refresh-info">Refresco en <span id="dns-countdown">300</span>s</span>
+          <button class="btn btn-blue btn-sm" onclick="loadDnsLog(true)">↺ Actualizar ahora</button>
+          <button class="btn btn-gray btn-sm" onclick="limpiarDns()">🗑 Limpiar vista</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <pre class="logbox" id="dns_display">Esperando consultas DNS...</pre>
+      </div>
+    </div>
+
+    <!-- Lista negra con botón eliminar -->
+    <div class="card accent-amber">
+      <div class="card-header">
+        <h2>Threat Intelligence — Lista Negra</h2>
+        <button class="btn btn-gray btn-sm" onclick="loadBlacklist()">↺ Refrescar</button>
+      </div>
+      <div class="card-body">
+        <div class="form-row" style="margin-bottom:12px">
+          <div class="form-group">
+            <label>IP peligrosa</label>
+            <input type="text" id="bl_ip" placeholder="1.2.3.4">
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <select id="bl_cat">
+              <option>Botnet</option>
+              <option>Malware/C2</option>
+              <option>Phishing</option>
+              <option>Ransomware</option>
+              <option>Spam</option>
+              <option>TOR/Anonimizador</option>
+            </select>
+          </div>
+          <div class="form-group" style="max-width:100px">
+            <label>Riesgo</label>
+            <select id="bl_riesgo">
+              <option>BAJO</option>
+              <option>MEDIO</option>
+              <option selected>ALTO</option>
+              <option>CRITICO</option>
+            </select>
+          </div>
+          <button class="btn btn-amber" onclick="agregarBlacklist()">Agregar</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>IP</th><th>Categoría</th><th>Riesgo</th><th>Acción</th></tr>
+          </thead>
+          <tbody id="bl-tbody">
+            <tr><td colspan="4" style="color:#64748b">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FILA 3: Dispositivos descubiertos ═══ -->
+  <div class="grid-1" style="margin-bottom:20px">
+    <div class="card accent-cyan">
+      <div class="card-header">
+        <h2>Dispositivos Descubiertos en la Red (ARP Scan)</h2>
+        <button class="btn btn-gray btn-sm" onclick="loadHosts()">↺ Refrescar</button>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12px;color:#64748b;margin-bottom:10px">
+          Dispositivos activos detectados. Rojo = no está en lista blanca.
+        </p>
+        <table>
+          <thead><tr><th>IP</th><th>MAC</th><th>Estado</th></tr></thead>
+          <tbody id="hosts-tbody">
+            <tr><td colspan="3" style="color:#64748b">Esperando escaneo ARP...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FILA 4: Cambio de correo AAA ═══ -->
+  <div class="grid-1">
+    <div class="card accent-purple">
+      <div class="card-header">
+        <h2>Configuración de Correo Administrador (AAA)</h2>
+        <span id="email-preview-badge" class="email-preview">Cargando...</span>
+      </div>
+      <div class="card-body">
+        <div class="step-panel step-active" id="step1">
+          <div class="step-label">PASO 1 — Identificación y Autenticación</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nuevo correo administrador</label>
+              <input type="email" id="new_email" placeholder="nuevo@dominio.com">
+            </div>
+            <div class="form-group">
+              <label>Token secreto (ADMIN_TOKEN del .env)</label>
+              <input type="password" id="admin_token" placeholder="••••••••">
+            </div>
+            <button class="btn btn-blue" onclick="solicitarCambioCorreo()">Solicitar cambio</button>
+          </div>
+          <p class="info-text">Se enviará un código de 6 dígitos al nuevo correo para confirmar.</p>
+        </div>
+
+        <div class="step-panel hidden" id="step2">
+          <div class="step-label">PASO 2 — Autorización (código recibido en el nuevo correo)</div>
+          <div class="form-row">
+            <div class="form-group" style="max-width:220px">
+              <label>Código de verificación (6 dígitos)</label>
+              <input type="text" id="otp_code" placeholder="123456" maxlength="6"
+                     style="letter-spacing:8px;font-size:18px;text-align:center">
+            </div>
+            <button class="btn btn-green" onclick="confirmarCambioCorreo()">Confirmar y aplicar</button>
+            <button class="btn btn-gray"  onclick="cancelarCambio()">Cancelar</button>
+          </div>
+          <p class="info-text">El código expira en 5 minutos.</p>
+        </div>
+
+        <div id="aaa-notice" class="hidden"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  // ═══════════════════════════════════════════════════════
+  //  ESTADO LOCAL — evita mostrar duplicados en alertas/DNS
+  // ═══════════════════════════════════════════════════════
+
+  // Guarda las líneas ya mostradas para no repetirlas
+  const _alertasVistas = new Set();
+  const _dnsVistos     = new Set();
+
+  // Contadores de countdown (segundos restantes)
+  let _alertaCountdown = 300;
+  let _dnsCountdown    = 300;
+
+  // ── Reloj ─────────────────────────────────────────────
+  (function tick() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleString('es-MX', {hour12: false});
+    setTimeout(tick, 1000);
+  })();
+
+  // ── Countdown visual ───────────────────────────────────
+  // Decrementa los contadores cada segundo y actualiza el texto
+  setInterval(() => {
+    _alertaCountdown--;
+    _dnsCountdown--;
+
+    document.getElementById('alert-countdown').textContent =
+      Math.max(0, _alertaCountdown);
+    document.getElementById('dns-countdown').textContent =
+      Math.max(0, _dnsCountdown);
+
+    // Cuando llega a 0, refresca automáticamente
+    if (_alertaCountdown <= 0) {
+      loadReport(false);   // false = sin resetear el set de vistas
+      _alertaCountdown = 300;
+    }
+    if (_dnsCountdown <= 0) {
+      loadDnsLog(false);
+      _dnsCountdown = 300;
+    }
+  }, 1000);
+
+  // ═══════════════════════════════════════════════════════
+  //  ALERTAS — muestra cada línea UNA SOLA VEZ
+  // ═══════════════════════════════════════════════════════
+
+  async function loadReport(manual = false) {
+    const r = await fetch('/api/report');
+    const d = await r.json();
+    const pre = document.getElementById('report_display');
+
+    if (!d.logs || !d.logs.length) {
+      if (_alertasVistas.size === 0) pre.textContent = 'Sin eventos registrados.';
+      return;
+    }
+
+    // Si es refresco manual, limpiar y mostrar todo de nuevo
+    if (manual) {
+      _alertasVistas.clear();
+      pre.innerHTML = '';
+      _alertaCountdown = 300;
+      document.getElementById('alert-countdown').textContent = '300';
+    }
+
+    let nuevas = 0;
+    d.logs.forEach(linea => {
+      linea = linea.trim();
+      if (!linea || _alertasVistas.has(linea)) return;  // ya está mostrada, ignorar
+
+      _alertasVistas.add(linea);
+      nuevas++;
+
+      const span = document.createElement('span');
+      span.className =
+        (linea.includes('[AMENAZA]') || linea.includes('[SPOOFING]') || linea.includes('[INTRUSO]'))
+          ? 'entry-alert'
+        : linea.includes('[CONFIG]')
+          ? 'entry-config'
+          : '';
+      span.textContent = linea + '\n';
+      pre.appendChild(span);
+    });
+
+    // Solo hace scroll al final si hay líneas nuevas
+    if (nuevas > 0) {
+      pre.scrollTop = pre.scrollHeight;
+    }
+  }
+
+  function limpiarAlertas() {
+    _alertasVistas.clear();
+    document.getElementById('report_display').innerHTML = '';
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  DNS LOG — misma lógica, sin duplicados
+  // ═══════════════════════════════════════════════════════
+
+  async function loadDnsLog(manual = false) {
+    const r = await fetch('/api/dns-log');
+    const d = await r.json();
+    const pre = document.getElementById('dns_display');
+
+    if (!d.logs || !d.logs.length) {
+      if (_dnsVistos.size === 0) pre.textContent = 'Sin consultas DNS registradas.';
+      return;
+    }
+
+    if (manual) {
+      _dnsVistos.clear();
+      pre.innerHTML = '';
+      _dnsCountdown = 300;
+      document.getElementById('dns-countdown').textContent = '300';
+    }
+
+    let nuevas = 0;
+    d.logs.forEach(linea => {
+      linea = linea.trim();
+      if (!linea || _dnsVistos.has(linea)) return;
+
+      _dnsVistos.add(linea);
+      nuevas++;
+
+      const span = document.createElement('span');
+      span.className = linea.includes('[HTTP]') ? 'entry-config' : 'entry-dns';
+      span.textContent = linea + '\n';
+      pre.appendChild(span);
+    });
+
+    if (nuevas > 0) {
+      pre.scrollTop = pre.scrollHeight;
+    }
+  }
+
+  function limpiarDns() {
+    _dnsVistos.clear();
+    document.getElementById('dns_display').innerHTML = '';
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  LISTA BLANCA
+  // ═══════════════════════════════════════════════════════
+
+  async function loadWhitelist() {
+    const r = await fetch('/api/whitelist');
+    const d = await r.json();
+    const tbody = document.getElementById('wl-tbody');
+    const ips = Object.keys(d);
+    if (!ips.length) {
+      tbody.innerHTML = '<tr><td colspan="3" style="color:#64748b">Sin dispositivos autorizados</td></tr>';
+      return;
+    }
+    tbody.innerHTML = ips.map(ip => `
+      <tr>
+        <td><code style="color:#93c5fd">${ip}</code></td>
+        <td><code style="color:#94a3b8">${d[ip]}</code></td>
+        <td>
+          <button class="btn btn-red btn-sm"
+                  onclick="eliminarDispositivo('${ip}')">Eliminar</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function agregarDispositivo() {
+    const ip  = document.getElementById('ip_input').value.trim();
+    const mac = document.getElementById('mac_input').value.trim();
+    if (!ip || !mac) { alert('Completa IP y MAC.'); return; }
+    const r = await fetch('/api/whitelist', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ip, mac})
+    });
+    const d = await r.json();
+    if (r.ok) {
+      document.getElementById('ip_input').value  = '';
+      document.getElementById('mac_input').value = '';
+      loadWhitelist();
+    }
+    alert(d.message);
+  }
+
+  async function eliminarDispositivo(ip) {
+    if (!confirm(`¿Eliminar ${ip} de la lista blanca?`)) return;
+    const r = await fetch(`/api/whitelist/${encodeURIComponent(ip)}`, {method: 'DELETE'});
+    const d = await r.json();
+    alert(d.message);
+    loadWhitelist();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  LISTA NEGRA — con botón eliminar
+  // ═══════════════════════════════════════════════════════
+
+  async function loadBlacklist() {
+    const r = await fetch('/api/blacklist');
+    const d = await r.json();
+    const tbody = document.getElementById('bl-tbody');
+    const ips = Object.keys(d);
+
+    if (!ips.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:#64748b">Sin IPs en lista negra</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = ips.map(ip => {
+      const info = d[ip];
+      const rBadge =
+        info.riesgo === 'CRITICO' ? 'badge-red'   :
+        info.riesgo === 'ALTO'    ? 'badge-amber'  :
+        info.riesgo === 'MEDIO'   ? 'badge-purple' : 'badge-blue';
+      return `<tr>
+        <td><code style="color:#f87171">${ip}</code></td>
+        <td>${info.categoria}</td>
+        <td><span class="badge ${rBadge}">${info.riesgo}</span></td>
+        <td>
+          <button class="btn btn-red btn-sm"
+                  onclick="eliminarBlacklist('${ip}')">Eliminar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function agregarBlacklist() {
+    const ip     = document.getElementById('bl_ip').value.trim();
+    const cat    = document.getElementById('bl_cat').value;
+    const riesgo = document.getElementById('bl_riesgo').value;
+    if (!ip) { alert('Ingresa una IP.'); return; }
+    const r = await fetch('/api/blacklist', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ip, categoria: cat, riesgo})
+    });
+    const d = await r.json();
+    alert(d.message);
+    document.getElementById('bl_ip').value = '';
+    loadBlacklist();
+  }
+
+  async function eliminarBlacklist(ip) {
+    if (!confirm(`¿Eliminar ${ip} de la lista negra?`)) return;
+    const r = await fetch(`/api/blacklist/${encodeURIComponent(ip)}`, {method: 'DELETE'});
+    const d = await r.json();
+    alert(d.message);
+    loadBlacklist();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  HOSTS DESCUBIERTOS
+  // ═══════════════════════════════════════════════════════
+
+  async function loadHosts() {
+    const r = await fetch('/api/hosts');
+    const d = await r.json();
+    const tbody = document.getElementById('hosts-tbody');
+    const wlRes = await fetch('/api/whitelist');
+    const wl    = await wlRes.json();
+
+    if (!d.hosts || !d.hosts.length) {
+      tbody.innerHTML = '<tr><td colspan="3" style="color:#64748b">Sin dispositivos (ARP scan en progreso...)</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.hosts.map(h => {
+      const auth  = wl.hasOwnProperty(h.ip);
+      const badge = auth
+        ? '<span class="badge badge-green">Autorizado</span>'
+        : '<span class="badge badge-red">No autorizado</span>';
+      return `<tr>
+        <td><code style="color:${auth ? '#34d399' : '#f87171'}">${h.ip}</code></td>
+        <td><code style="color:#94a3b8">${h.mac}</code></td>
+        <td>${badge}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  CORREO ADMIN (AAA)
+  // ═══════════════════════════════════════════════════════
+
+  let _pendingEmail = '';
+
+  async function loadEmailPreview() {
+    try {
+      const r = await fetch('/api/config/admin');
+      const d = await r.json();
+      document.getElementById('email-preview-badge').textContent =
+        d.admin_email_preview || 'No configurado';
+    } catch(e) {
+      document.getElementById('email-preview-badge').textContent = 'Error';
+    }
+  }
+
+  function setNotice(msg, tipo) {
+    const el = document.getElementById('aaa-notice');
+    el.className = `notice notice-${tipo}`;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  async function solicitarCambioCorreo() {
+    const correo = document.getElementById('new_email').value.trim();
+    const token  = document.getElementById('admin_token').value.trim();
+    if (!correo || !token) { setNotice('Completa ambos campos.', 'err'); return; }
+    setNotice('Verificando token y enviando código...', 'ok');
+    const r = await fetch('/api/config/admin/solicitar', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({nuevo_correo: correo, token})
+    });
+    const d = await r.json();
+    if (r.ok) {
+      _pendingEmail = correo;
+      document.getElementById('admin_token').value = '';
+      document.getElementById('step1').classList.remove('step-active');
+      document.getElementById('step2').classList.remove('hidden');
+      document.getElementById('step2').classList.add('step-active');
+      setNotice(d.message, 'ok');
+    } else {
+      setNotice(`[${d.fase}] ${d.message}`, 'err');
+      document.getElementById('admin_token').value = '';
+    }
+  }
+
+  async function confirmarCambioCorreo() {
+    const codigo = document.getElementById('otp_code').value.trim();
+    if (codigo.length !== 6) { setNotice('El código debe tener 6 dígitos.', 'err'); return; }
+    const r = await fetch('/api/config/admin/confirmar', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({nuevo_correo: _pendingEmail, codigo})
+    });
+    const d = await r.json();
+    if (r.ok) {
+      setNotice(`✓ ${d.message}`, 'ok');
+      document.getElementById('step2').classList.add('hidden');
+      document.getElementById('step2').classList.remove('step-active');
+      document.getElementById('step1').classList.add('step-active');
+      document.getElementById('new_email').value = '';
+      document.getElementById('otp_code').value  = '';
+      _pendingEmail = '';
+      loadEmailPreview();
+    } else {
+      setNotice(`[${d.fase}] ${d.message}`, 'err');
+    }
+  }
+
+  function cancelarCambio() {
+    _pendingEmail = '';
+    document.getElementById('otp_code').value = '';
+    document.getElementById('step2').classList.add('hidden');
+    document.getElementById('step2').classList.remove('step-active');
+    document.getElementById('step1').classList.add('step-active');
+    document.getElementById('aaa-notice').classList.add('hidden');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  UTILIDADES
+  // ═══════════════════════════════════════════════════════
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  CARGAS INICIALES
+  //  Alertas y DNS solo al cargar — después el countdown
+  //  controla cuándo refrescan automáticamente
+  // ═══════════════════════════════════════════════════════
+
+  loadEmailPreview();
+  loadWhitelist();
+  loadBlacklist();
+  loadHosts();
+  loadReport(true);
+  loadDnsLog(true);
+
+  // Hosts y whitelist sí refrescan seguido (son datos de estado, no logs)
+  setInterval(loadHosts,     15000);
+  setInterval(loadWhitelist, 15000);
+  setInterval(loadBlacklist, 15000);
+
+  // Alertas y DNS ya no tienen setInterval — el countdown los maneja
+</script>
+</body>
+</html>
