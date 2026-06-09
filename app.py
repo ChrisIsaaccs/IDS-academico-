@@ -41,11 +41,11 @@ TIEMPO_ESPERA_SEGUNDOS = 300
 PENDING_VERIFICATIONS  = {}
 LISTA_NEGRA_IPS        = {}
 
-# IPs propias del host — se llenan al iniciar para no auto-alertar
+
 HOST_IPS = set()
 
-# Después de las constantes globales, agrega:
-arp_spoofer = None   # instancia global del spoofer
+
+arp_spoofer = None  
 
 
 # ════════════════════════════════════════════════════════════════════════════════
@@ -115,7 +115,7 @@ def detectar_ips_propias():
             ips.add(info[4][0])
     except Exception:
         pass
-    # También por interfaces con ip command
+
     try:
         out = subprocess.check_output(
             ['ip', '-o', '-4', 'addr', 'show'],
@@ -275,7 +275,7 @@ def _protocolo_str(pkt):
 def _es_ip_ignorable(ip):
     """IPs que nunca deben generar alerta (broadcast, multicast, loopback)."""
     return (
-        ip.startswith("224.")   # multicast
+        ip.startswith("224.")
         or ip.startswith("239.")
         or ip.startswith("255.")
         or ip == "0.0.0.0"
@@ -342,7 +342,7 @@ def analizar_paquete(pkt):
                 mac_src = pkt[Ether].src.lower()
 
             if ip_src not in wl:
-                # IP origen no está en lista blanca → INTRUSO
+        
                 msg = f"[INTRUSO] No autorizado: IP={ip_src} MAC={mac_src or 'N/A'} Proto={proto} → {ip_dst}"
                 escribir_log(LOG_FILE, msg)
 
